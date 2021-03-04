@@ -16,7 +16,8 @@ function ShoulderCamera:create()
         
         currentOffsetProfile = nil;
         lockMouseCenter = true;
-        yAngle = math.rad(-90)
+        yAngleRotation = math.rad(-90);
+        xRotation = math.rad(0)
     }, self)
 
     self.__index = self
@@ -80,25 +81,32 @@ function ShoulderCamera:updateCamera()
     self.yRotationRadius = offsetZ
     self.fullCircle = math.pi * 2
 
-    local y, z = self:getYAndZPosition(self.yAngle)
-    local position = (offsetPoint * CFrame.new(0, y, z)).p
+    local y, z = self:getYAndZPosition(self.yAngleRotation)
+    local position = (offsetPoint * CFrame.new(self.xRotation, y, z)).p
     local lookAt = offsetPoint.Position
     
     self.camera.CFrame = CFrame.new(position, lookAt)
 end
 
 
-function ShoulderCamera:updateYAngle()
+function ShoulderCamera:updateYAngleRotation()
     local mouseDeltaY = UserInputService:GetMouseDelta().Y
 
     -- Limiter Code. Prevents players from rotating their camera overboard
-    if self.yAngle - math.rad(mouseDeltaY) > -math.rad(10) then
+    if self.yAngleRotation - math.rad(mouseDeltaY) > -math.rad(10) then
         return
-    elseif self.yAngle - math.rad(mouseDeltaY) < -math.rad(160) then
+    elseif self.yAngleRotation - math.rad(mouseDeltaY) < -math.rad(160) then
         return
     end
 
-    self.yAngle -= math.rad(mouseDeltaY)
+    self.yAngleRotation -= math.rad(mouseDeltaY)
+end
+
+
+function ShoulderCamera:updateCharacterXRotation()
+    local mouseDeltaX = UserInputService:GetMouseDelta().X
+    -- No idea why but the mouseDeltaX is the equivalent of y on CFrame.Angles
+    self.character.PrimaryPart.CFrame *= CFrame.Angles(0, -math.rad(mouseDeltaX), 0)
 end
 
 
@@ -108,7 +116,8 @@ function ShoulderCamera:activate()
     self:deactivate()
 
     self.shoulderCameraRenderStep = RunService.RenderStepped:Connect(function()
-        self:updateYAngle()
+        self:updateYAngleRotation()
+        self:updateCharacterXRotation()
         self:updateCamera()
     end)
 end
