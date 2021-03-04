@@ -15,7 +15,8 @@ function ShoulderCamera:create()
         };
         
         currentOffsetProfile = nil;
-        lockMouseCenter = true
+        lockMouseCenter = false;
+        yAngle = 0
     }, self)
 
     self.__index = self
@@ -58,6 +59,13 @@ function ShoulderCamera:deactivate()
 end
 
 
+function ShoulderCamera:getYAndZPosition(angle)
+    local y = math.cos(angle) * self.yRotationRadius
+    local z = math.sin(angle) * self.yRotationRadius
+    return y, z
+end
+
+
 function ShoulderCamera:updateCamera()
     local currentOffsetProfile = self.currentOffsetProfile or Vector3.new(0, 0, 0)
     local offsetX = currentOffsetProfile.X
@@ -67,10 +75,17 @@ function ShoulderCamera:updateCamera()
     local currentPlayerCharacterCFrame = self.character.PrimaryPart.CFrame
     local updatedCameraCFrame = currentPlayerCharacterCFrame
     + currentPlayerCharacterCFrame.RightVector * offsetX
-    + currentPlayerCharacterCFrame.UpVector * offsetY
-    + currentPlayerCharacterCFrame.LookVector * offsetZ
 
     self.camera.CFrame = updatedCameraCFrame 
+
+    self.yRotationRadius = offsetY
+    self.fullCircle = math.pi * 2
+
+    local y, z = self:getYAndZPosition(self.yAngle)
+    local position = (self.camera.CFrame * CFrame.new(0, y, z)).p
+    local lookAt = self.character.PrimaryPart.Position
+    
+    self.camera.CFrame = CFrame.new(position, lookAt)
 end
 
 
