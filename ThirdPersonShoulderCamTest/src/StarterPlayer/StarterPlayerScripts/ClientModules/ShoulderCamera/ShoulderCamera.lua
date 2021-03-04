@@ -17,7 +17,6 @@ function ShoulderCamera:create()
         currentOffsetProfile = nil;
         lockMouseCenter = true;
         yAngleRotation = math.rad(-90);
-        xRotation = math.rad(0)
     }, self)
 
     self.__index = self
@@ -25,13 +24,26 @@ function ShoulderCamera:create()
 end
 
 
-function ShoulderCamera:changeOffsetProfile(offsetProfileName)
-    offsetProfileName = offsetProfileName or "default"
-    self.currentProfile = self.offsetProfiles[string.lower(offsetProfileName)]
+function ShoulderCamera:addOffsetProfile(offsetProfileName, offsetVector3)
+    assert(typeof(offsetProfileName) == "string", "Provided offsetProfileName argument needs to be a string. Given argument is a " .. typeof(offsetProfileName))
+    assert(typeof(offsetVector3) == "Vector3", "Provided offsetVector3 argument needs to be a Vector3. Given argument is a " .. typeof(offsetVector3))
+
+    self.offsetProfiles[offsetProfileName] = offsetVector3
 end
 
 
-function ShoulderCamera:_setupAttributes()
+function ShoulderCamera:changeOffsetProfile(offsetProfileName)
+    assert(typeof(offsetProfileName) == "string", "offsetProfileName argument needs to be a string. Given argument is a " .. typeof(offsetProfileName))
+
+    -- Making every name to be lower cased. To prevent case sensitive errors
+    offsetProfileName = offsetProfileName or "default"
+    self.currentProfile = self.offsetProfiles[string.lower(offsetProfileName)] or self.offsetProfiles["default"]
+end
+
+
+function ShoulderCamera:setupAttributes()
+    -- This method needs to be recalled when the player dies
+
     self.camera = workspace.CurrentCamera
     self.player = Players.LocalPlayer
     self.character = self.player.Character or self.player.CharacterAdded:Wait()
@@ -45,6 +57,7 @@ end
 
 function ShoulderCamera:_setupForCamera()
     self.playerHumanoid.AutoRotate = false
+
     if self.lockMouseCenter then
         UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
     end
@@ -61,6 +74,8 @@ end
 
 
 function ShoulderCamera:getYAndZPosition(angle)
+    assert(type(angle) == "number", "Given argument angle needs to be a number. Given argument is a " .. type(angle))
+
     local y = math.cos(angle) * self.yRotationRadius
     local z = math.sin(angle) * self.yRotationRadius
     return y, z
@@ -82,7 +97,7 @@ function ShoulderCamera:updateCamera()
     self.fullCircle = math.pi * 2
 
     local y, z = self:getYAndZPosition(self.yAngleRotation)
-    local position = (offsetPoint * CFrame.new(self.xRotation, y, z)).p
+    local position = (offsetPoint * CFrame.new(0, y, z)).p
     local lookAt = offsetPoint.Position
     
     self.camera.CFrame = CFrame.new(position, lookAt)
@@ -92,13 +107,23 @@ end
 function ShoulderCamera:updateYAngleRotation()
     local mouseDeltaY = UserInputService:GetMouseDelta().Y
 
-    -- Limiter Code. Prevents players from rotating their camera overboard
-    if self.yAngleRotation - math.rad(mouseDeltaY) > -math.rad(10) then
+    local newYAngleRotation = self.yAngleRotation - math.rad(mouseDeltaY)
+
+    -- Prevents players from rotating their camera overboard
+    -- -10 (limit for the rotating downward) and -160 (limit for rotating downward) are expected to be the good numbers
+
+    local newYAngleRotationWillExceedMaxUpwardRotation = newYAngleRotation > -math.rad(10)
+    local newYAngleRotationWillExceedMaxDownwardRotation = newYAngleRotation < -math.rad(160)
+
+    -- limit player from rotating upwards
+    if newYAngleRotationWillExceedMaxUpwardRotation then
         return
-    elseif self.yAngleRotation - math.rad(mouseDeltaY) < -math.rad(160) then
+    -- Limit player from rotating downwards
+    elseif newYAngleRotationWillExceedMaxDownwardRotation then
         return
     end
 
+    -- Returning makes it so this statement right here does not have the permission to run
     self.yAngleRotation -= math.rad(mouseDeltaY)
 end
 
@@ -111,7 +136,7 @@ end
 
 
 function ShoulderCamera:activate()
-    self:_setupAttributes()
+    self:setupAttributes()
     self:_setupForCamera()
     self:deactivate()
 
@@ -120,6 +145,8 @@ function ShoulderCamera:activate()
         self:updateCharacterXRotation()
         self:updateCamera()
     end)
+
+    self.player.CharacterAdded:Connect(self.setupAttributes)
 end
 
 return ShoulderCamera
