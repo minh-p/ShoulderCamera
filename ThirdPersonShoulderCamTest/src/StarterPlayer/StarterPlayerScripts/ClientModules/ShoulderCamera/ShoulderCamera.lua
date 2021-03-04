@@ -15,8 +15,8 @@ function ShoulderCamera:create()
         };
         
         currentOffsetProfile = nil;
-        lockMouseCenter = false;
-        yAngle = 0
+        lockMouseCenter = true;
+        yAngle = math.rad(-90)
     }, self)
 
     self.__index = self
@@ -88,12 +88,27 @@ function ShoulderCamera:updateCamera()
 end
 
 
+function ShoulderCamera:updateYAngle()
+    local mouseDeltaY = UserInputService:GetMouseDelta().Y
+
+    -- Limiter Code. Prevents players from rotating their camera overboard
+    if self.yAngle - math.rad(mouseDeltaY) > -math.rad(10) then
+        return
+    elseif self.yAngle - math.rad(mouseDeltaY) < -math.rad(160) then
+        return
+    end
+
+    self.yAngle -= math.rad(mouseDeltaY)
+end
+
+
 function ShoulderCamera:activate()
     self:_setupAttributes()
     self:_setupForCamera()
     self:deactivate()
 
     self.shoulderCameraRenderStep = RunService.RenderStepped:Connect(function()
+        self:updateYAngle()
         self:updateCamera()
     end)
 end
