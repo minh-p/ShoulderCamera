@@ -73,17 +73,16 @@ function ShoulderCamera:updateCamera()
     local offsetZ = currentOffsetProfile.Z
 
     local currentPlayerCharacterCFrame = self.character.PrimaryPart.CFrame
-    local updatedCameraCFrame = currentPlayerCharacterCFrame
+    local offsetPoint = currentPlayerCharacterCFrame
     + currentPlayerCharacterCFrame.RightVector * offsetX
+    + currentPlayerCharacterCFrame.UpVector * offsetY
 
-    self.camera.CFrame = updatedCameraCFrame 
-
-    self.yRotationRadius = offsetY
+    self.yRotationRadius = offsetZ
     self.fullCircle = math.pi * 2
 
     local y, z = self:getYAndZPosition(self.yAngle)
-    local position = (self.camera.CFrame * CFrame.new(0, y, z)).p
-    local lookAt = self.character.PrimaryPart.Position
+    local position = (offsetPoint * CFrame.new(0, y, z)).p
+    local lookAt = offsetPoint.Position
     
     self.camera.CFrame = CFrame.new(position, lookAt)
 end

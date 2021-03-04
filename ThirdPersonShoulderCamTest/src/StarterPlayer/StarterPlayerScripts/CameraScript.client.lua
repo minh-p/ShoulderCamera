@@ -9,7 +9,7 @@ local shoulderCameraModules = playerScripts:WaitForChild("ClientModules"):WaitFo
 
 local shoulderCamera = require(shoulderCameraModules:WaitForChild("ShoulderCamera")):create()
 shoulderCamera:activate()
-for newAngle = 10, 160, 1 do
+for newAngle = -10, -160, -1 do
     shoulderCamera.yAngle = math.rad(newAngle)
     wait()
 end
